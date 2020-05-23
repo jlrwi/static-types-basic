@@ -31,6 +31,7 @@ import {
 //test     log,
 //test     string_concat,
 //test     array_map,
+//test     equals,
     is_object,
     prop,
     object_has_property,
@@ -39,6 +40,8 @@ import {
 //test import {slm} from "@jlrwi/es-static-types";
 //test import adtTests from "@jlrwi/adt_tests";
 //test import jsCheck from "@jlrwi/jscheck";
+//test import maybe_type from "../src/Maybe_Type.js";
+//test import pair_type from "../src/Pair_Type.js";
 //test let jsc = jsCheck();
 
 const type_name = "Constant";
@@ -57,7 +60,7 @@ const concat = function (T) {
     };
 };
 
-const equals = function (T) {
+const adt_equals = function (T) {
     return function (x) {
         return function (y) {
             return T.equals (extract (x)) (extract (y));
@@ -88,6 +91,21 @@ This is how you might expect .ap() to work:
 
 But it fails the Applicative tests.
 */
+
+// Foldable :: ((b, a) -> b) -> b -> C a -> b
+//                ignored               ignored
+const reduce = function (ignore) {
+    return constant;
+};
+
+// Traversable :: Applicative<U> -> (a -> U<b>) -> C a -> U<C b>
+//                                    ignored
+const traverse = function (U) {
+    return function (ignore) {
+        return U.of;
+    };
+};
+
 const validate = function (T) {
     return function (x) {
         return (
@@ -100,6 +118,7 @@ const validate = function (T) {
 
 const create = function (x) {
     return minimal_object({
+        type_name,
         toJSON: constant ("Constant (" + JSON.stringify(x) + ")"),
         value: x
     });
@@ -114,6 +133,8 @@ const type_factory = function (type_of) {
         map,
 //        of,
         create,
+        reduce,
+        traverse,
         validate: is_object,
         extract
     };
@@ -133,7 +154,7 @@ const type_factory = function (type_of) {
         }
 
         if (check_for_prop ("equals")) {
-            base_type.equals = equals (type_of);
+            base_type.equals = adt_equals (type_of);
         }
 
         if (check_for_prop ("lte")) {
@@ -151,6 +172,8 @@ const type_factory = function (type_of) {
 };
 
 //test const testT = type_factory (slm.str);
+//test const pair_of_bool_strT = pair_type (slm.bool) (slm.str);
+//test const maybe_of_stringT = maybe_type (slm.str);
 //test const test_fxs = array_map (jsc.literal) ([
 //test     string_concat ("_"),
 //test     flip (string_concat) ("!"),
@@ -161,11 +184,9 @@ const type_factory = function (type_of) {
 //test         return str.split("").reverse().join("");
 //test     }
 //test ]);
-
 //test const invoke_of = function (contentsf) {
 //test     return compose (create) (contentsf);
 //test };
-
 //test const test_roster = adtTests ({
 //test     functor: {
 //test         T: testT,
@@ -191,6 +212,48 @@ const type_factory = function (type_of) {
 //test             u: invoke_of (jsc.wun_of(test_fxs)),
 //test             x: jsc.string()
 //test         }]
+//test     },
+//test     foldable: {
+//test         T: testT,
+//test         signature: [{
+//test             f: jsc.wun_of(test_fxs),
+//test             x: jsc.string(),
+//test             u: invoke_of (jsc.string ())
+//test         }],
+//test         compare_with: equals
+//test     },
+//test     traversable: {
+//test         T: testT,
+//test         signature: [{
+//test             A: pair_of_bool_strT,
+//test             B: maybe_of_stringT,
+//test             a: function () {
+//test                 return pair_of_bool_strT.create (
+//test                     jsc.boolean() ()
+//test                 ) (
+//test                     jsc.string() ()
+//test                 );
+//test             },
+//test             f: jsc.literal(function (pr) {
+//test                 return maybe_of_stringT.just (pr.snd);
+//test             }),
+//test             g: jsc.wun_of(test_fxs),
+//test             u: invoke_of (
+//test                 function () {
+//test                     return pair_of_bool_strT.create (
+//test                         jsc.boolean() ()
+//test                     ) (
+//test                         maybe_of_stringT.just(jsc.string() ())
+//test                     );
+//test                 }
+//test             )
+//test         }],
+//test         compare_with: array_map (prop ("equals")) ([
+//test             maybe_of_stringT,
+//test             compose (maybe_type) (type_factory) (maybe_of_stringT),
+//test             compose (maybe_type) (type_factory) (pair_of_bool_strT),
+//test             pair_type (slm.bool) (maybe_type (testT))
+//test         ])
 //test     },
 //test     semigroup: {
 //test         T: testT,
@@ -223,7 +286,6 @@ const type_factory = function (type_of) {
 //test         }]
 //test     }
 //test });
-
 //test test_roster.forEach(jsc.claim);
 //testbatch /*
 //test jsc.check({
@@ -231,5 +293,4 @@ const type_factory = function (type_of) {
 //test });
 //testbatch */
 //testbatch export {jsc};
-
 export default Object.freeze(type_factory);

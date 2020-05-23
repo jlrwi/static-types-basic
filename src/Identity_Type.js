@@ -31,6 +31,7 @@ const extract = prop ("value");
 
 const of = function (x) {
     return minimal_object({
+        type_name,
         toJSON: constant ("Identity (" + JSON.stringify(x) + ")"),
         value: x
     });
@@ -78,6 +79,7 @@ const map = function (f) {
     );
 };
 
+//const ap = compose (map) (extract);
 const ap = function (a) {
     return map (extract (a));
 };

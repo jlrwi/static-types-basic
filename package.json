@@ -1,18 +1,25 @@
 {
-  "name": "static-types-basic",
-  "version": "1.0.0",
-  "description": "Basic Static Land Algebraic Data Types",
-  "main": "index.js",
-  "devDependencies": {
-        "@jlrwi/package-processor": "*"
-  },
-  "scripts": {
-        "pretest": "batch-process --pretest ./modules.json",
-        "test": "node --experimental-modules ./test/test_modules.js",
-        "posttest": "type test.log",
-        "stage": "batch-process --min ./modules.json"
-  },
-  "author": "Jonathan Reimer",
-  "license": "ISC",
-  "type": "module"
+      "name": "@jlrwi/static-types-basic",
+      "version": "1.0.0",
+      "description": "Basic Static Land Algebraic Data Types",
+      "main": "index.js",
+      "devDependencies": {
+            "@jlrwi/package-processor": "*",
+            "@jlrwi/es-static-types": "*",
+            "@jlrwi/adt_tests": "*",
+            "@jlrwi/jscheck": "*"
+      },
+      "dependencies": {
+            "@jlrwi/combinators": "*",
+            "@jlrwi/esfunctions": "*"
+      },
+      "scripts": {
+            "pretest": "batch-process --pretest ./modules.json",
+            "test": "node --experimental-modules ./test/test_modules.js",
+            "posttest": "type test.log",
+            "stage": "batch-process --min ./modules.json"
+      },
+      "author": "Jonathan Reimer",
+      "license": "ISC",
+      "type": "module"
 }
