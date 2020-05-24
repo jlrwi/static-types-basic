@@ -173,19 +173,6 @@ const type_factory = function (type_of) {
 //test         return str.split("").reverse().join("");
 //test     }
 //test ]);
-//test const fold_fxs = array_map (jsc.literal) ([
-//test     function (acc) {
-//test         return compose (add (acc)) (prop ("length"));
-//test     },
-//test     flip (string_concat) ("!"),
-//test     function (str) {
-//test         return str.slice(0, 2);
-//test     },
-//test     function (str) {
-//test         return str.split("").reverse().join("");
-//test     }
-//test ]);
-
 //test const invoke_of = function (contentsf) {
 //test     return compose (of) (contentsf);
 //test };
