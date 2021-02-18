@@ -140,7 +140,7 @@ const ap = function (spec_fst) {
 };
 
 // Applicative :: a -> F<a>
-//const of = create ();
+// const of = create ();
 const of = function (spec_fst) {
     return function (ignore) {
         return create (spec_fst.empty ());

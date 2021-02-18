@@ -78,10 +78,15 @@ const type_factory = function () {
 
 //test const testT = type_factory ();
 //test const nil_obj = create ();
-
+//test const custom_predicate = function (verdict) {
+//test     return function ({left, right, compare_with}) {
+//test         return verdict(compare_with (left) (right));
+//test     };
+//test };
 //test const test_roster = adtTests ({
 //test     functor: {
 //test         T: testT,
+//test         predicate: custom_predicate,
 //test         signature: [{
 //test             a: jsc.wun_of([null, undefined, NaN, nil_obj]),
 //test             f: jsc.literal(identity),
@@ -90,6 +95,7 @@ const type_factory = function () {
 //test     },
 //test     semigroup: {
 //test         T: testT,
+//test         predicate: custom_predicate,
 //test         signature: [{
 //test             a: jsc.wun_of([null, undefined, NaN, nil_obj]),
 //test             b: jsc.wun_of([null, undefined, NaN, nil_obj]),
@@ -98,12 +104,14 @@ const type_factory = function () {
 //test     },
 //test     monoid: {
 //test         T: testT,
+//test         predicate: custom_predicate,
 //test         signature: [{
 //test             a: jsc.wun_of([null, undefined, NaN, nil_obj])
 //test         }]
 //test     },
 //test     setoid: {
 //test         T: testT,
+//test         predicate: custom_predicate,
 //test         signature: [{
 //test             a: jsc.wun_of([null, undefined, NaN, nil_obj]),
 //test             b: jsc.wun_of([null, undefined, NaN, nil_obj]),
@@ -112,6 +120,7 @@ const type_factory = function () {
 //test     },
 //test     ord: {
 //test         T: testT,
+//test         predicate: custom_predicate,
 //test         signature: [{
 //test             a: jsc.wun_of([null, undefined, NaN, nil_obj]),
 //test             b: jsc.wun_of([null, undefined, NaN, nil_obj]),

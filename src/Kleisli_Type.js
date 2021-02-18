@@ -2,6 +2,8 @@
     fudge
 */
 
+// log should be fst because pair map operates on snd
+
 //erase /*
 import pair_type from "../src/Pair_Type.js";
 //erase */
@@ -25,14 +27,14 @@ import pair_type from "../src/Pair_Type.js";
 const type_factory = function (type_name) {
     return function (log_type) {
         return function (value_type) {
-            const pairT = pair_type (value_type) (log_type);
+            const pairT = pair_type (log_type) (value_type);
 
             // (b->(c,s)) -> (a->(b,s)) -> a -> (c,s)
             const compose = function (f) {
                 return function (g) {
                     return function (x) {
                         const gx = g (x);
-                        const fx = f (pairT.fst (gx));
+                        const fx = f (pairT.snd (gx));
 /*
                             const embellishment = log_type.concat (
                                 log_type.empty ()
@@ -41,13 +43,13 @@ const type_factory = function (type_name) {
                             );
 */
                         return pairT.create (
-                            pairT.fst (fx)
-                        ) (
                             log_type.concat (
-                                pairT.snd (gx)
+                                pairT.fst (gx)
                             ) (
-                                pairT.snd (fx)
+                                pairT.fst (fx)
                             )
+                        ) (
+                            pairT.snd (fx)
                         );
                     };
                 };
@@ -55,14 +57,14 @@ const type_factory = function (type_name) {
 
             //  id :: a -> (a, s)
             const id = function (x) {
-                return pairT.create (x) (log_type.empty ());
+                return pairT.create (log_type.empty ()) (x);
             };
 
             // Embellish a unary fx with a constant
             const embellish_function = function (f) {
-                return function (snd) {
+                return function (fst) {
                     return function (x) {
-                        return pairT.create (f (x)) (log_type.of (snd));
+                        return pairT.create (log_type.of (fst)) (f (x));
                     };
                 };
             };

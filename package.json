@@ -1,6 +1,6 @@
 {
       "name": "@jlrwi/static-types-basic",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Basic Static Land Algebraic Data Types",
       "main": "index.js",
       "devDependencies": {
