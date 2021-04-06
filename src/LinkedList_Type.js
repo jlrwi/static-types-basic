@@ -351,26 +351,58 @@ const zero = empty;
 
 // Sanctuary has chainRec
 
-/*
-const get = function (idx) {
-    return prop (idx);
-};
 
-const set = function (idx) {
-    return function (val) {
-        return function (a) {
-            return Object.freeze(
-                [...a.slice(0, idx), val, ...a.slice(idx + 1)]
-            );
-        };
+const get = function (idx) {
+    return function (list) {
+        let count = 0;
+        
+        const stepper = function (link) {
+            if (count === idx) {
+                return link[0];
+            }
+
+            if (link[1] === undefined) {
+                return undefined;
+            }
+            
+            count += 1;
+            return stepper (link[1]);
+        }
+        
+        return stepper (list);
     };
 };
 
-const indexer = Object.freeze({
-    get,
-    set
-});
-*/
+
+const set = function (idx) {
+    return function (val) {
+        return function (list) {
+            let count = 0;
+            
+            const stepper = function (link) {
+                if (link === undefined) {
+                    return undefined;
+                }
+                
+                if (count === idx) {
+                    return [
+                        val,
+                        link[1]
+                    ];
+                }                
+            
+                count += 1;
+                
+                return [
+                    link[0],
+                    stepper (link[1])
+                ]; 
+            }
+
+            return stepper (list);
+        };
+    };
+};
 
 const is_array_of_two = andf (
     compose (equals (2)) (prop ("length"))
@@ -428,6 +460,8 @@ const type_factory = function (type_of) {
         zero,
         append,
         traverse,
+        get,
+        set,
         reduce,
 //        indexer,
         validate: validate (constant (true)),
