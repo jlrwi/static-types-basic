@@ -79,7 +79,8 @@ const type_factory = function (type_name) {
                 equals,
                 compose,
                 id,
-                embellish_function
+                embellish_function,
+                create: pairT.create
             });
         };
     };
