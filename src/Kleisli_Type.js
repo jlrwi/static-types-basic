@@ -69,7 +69,7 @@ const type_factory = function (type_name) {
                 };
             };
 
-            //Needed for adt tests
+            // Needed for adt tests
             const equals = pairT.equals;
 
             return Object.freeze({

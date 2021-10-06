@@ -4,14 +4,14 @@
       "description": "Basic Static Land Algebraic Data Types",
       "main": "index.js",
       "devDependencies": {
-            "@jlrwi/package-processor": "*",
-            "@jlrwi/es-static-types": "*",
-            "@jlrwi/adt_tests": "*",
-            "@jlrwi/jscheck": "*"
+            "@jlrwi/adt_tests": "file:../adt_tests",
+            "@jlrwi/es-static-types": "file:../esstatictypes",
+            "@jlrwi/jscheck": "file:../jscheck",
+            "@jlrwi/package-processor": "file:../pkg_processor"
       },
       "dependencies": {
-            "@jlrwi/combinators": "*",
-            "@jlrwi/esfunctions": "*"
+            "@jlrwi/combinators": "file:../combinators",
+            "@jlrwi/esfunctions": "file:../esfunctions"
       },
       "scripts": {
             "pretest": "batch-process --pretest ./modules.json",
