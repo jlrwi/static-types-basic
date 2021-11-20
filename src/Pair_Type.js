@@ -3,14 +3,12 @@
 */
 
 import {
-//test     apply,
     compose,
     constant,
     converge,
     flip
 } from "@jlrwi/combinators";
 import {
-//test     log,
 //test     string_concat,
 //test     array_map,
 //test     add,
@@ -19,7 +17,7 @@ import {
 //test     max,
     and,
     andf,
-    either,
+    functional_if,
     prop,
     is_object,
     minimal_object,
@@ -30,7 +28,7 @@ import {
 //test     array_type
 //test } from "@jlrwi/es-static-types";
 //test import either_type from "../src/Either_Type.js";
-//test import adtTests from "@jlrwi/adt_tests";
+//test import adtTests from "@jlrwi/adt-tests";
 //test import jsCheck from "@jlrwi/jscheck";
 //test let jsc = jsCheck();
 
@@ -39,17 +37,17 @@ import {
 const type_name = "Pair";
 
 // Pair<a, b> -> a
-const fst = prop ("fst");
+const fst = prop("fst");
 
 // Pair<a, b> -> b
-const snd = prop ("snd");
+const snd = prop("snd");
 
 // a -> b -> Pair<a, b>
 // Morphism between functors Function and Pair
 const create = function (fst) {
     return function (snd) {
-        return minimal_object ({
-            toJSON: constant (
+        return minimal_object({
+            toJSON: constant(
                 "Pair (" + JSON.stringify(fst) + "," + JSON.stringify(snd) + ")"
             ),
             fst,
@@ -63,10 +61,10 @@ const equals = function (spec_fst) {
     return function (spec_snd) {
         return function (ys) {
             return function (xs) {
-                return and (
-                    spec_fst.equals (fst (xs)) (fst (ys))
-                ) (
-                    spec_snd.equals (snd (xs)) (snd (ys))
+                return and(
+                    spec_fst.equals(fst(xs))(fst(ys))
+                )(
+                    spec_snd.equals(snd(xs))(snd(ys))
                 );
             };
         };
@@ -79,9 +77,9 @@ const lte = function (spec_fst) {
         return function (ys) {
             return function (xs) {
                 return (
-                    spec_fst.equals (fst (ys)) (fst (xs))
-                    ? spec_snd.lte (snd (ys)) (snd (xs))
-                    : spec_fst.lte (fst (ys)) (fst (xs))
+                    spec_fst.equals(fst(ys))(fst(xs))
+                    ? spec_snd.lte(snd(ys))(snd(xs))
+                    : spec_fst.lte(fst(ys))(fst(xs))
                 );
             };
         };
@@ -93,10 +91,10 @@ const concat = function (spec_fst) {
     return function (spec_snd) {
         return function (ys) {
             return function (xs) {
-                return create (
-                    spec_fst.concat (fst (ys)) (fst (xs))
-                ) (
-                    spec_snd.concat (snd (ys)) (snd (xs))
+                return create(
+                    spec_fst.concat(fst(ys))(fst(xs))
+                )(
+                    spec_snd.concat(snd(ys))(snd(xs))
                 );
             };
         };
@@ -106,9 +104,10 @@ const concat = function (spec_fst) {
 // Monoid :: T -> _ -> a
 const empty = function (spec_fst) {
     return function (spec_snd) {
-        return function () {
-            return create (spec_fst.empty ()) (spec_snd.empty ());
-        };
+        return converge(create)(spec_fst.empty)(spec_snd.empty);
+//        return function () {
+//            return create(spec_fst.empty())(spec_snd.empty());
+//        };
     };
 };
 
@@ -116,9 +115,9 @@ const empty = function (spec_fst) {
 
 // Functor :: (a -> b) -> a -> b
 const map = function (f) {
-    return converge (create) (fst) (compose (f) (snd));
+    return converge(create)(fst)(compose(f)(snd));
 //    return function (x) {
-//        return create (fst (x)) (f (snd (x)));
+//        return create (fst (x))(f (snd (x)));
 //    };
 };
 
@@ -129,10 +128,10 @@ const ap = function (spec_fst) {
     return function (ignore) {
         return function (fs) {
             return function (xs) {
-                return create (
-                    spec_fst.concat (fst (xs)) (fst (fs))
-                ) (
-                    snd (fs) (snd (xs))
+                return create(
+                    spec_fst.concat(fst(xs))(fst(fs))
+                )(
+                    snd(fs)(snd(xs))
                 );
             };
         };
@@ -143,16 +142,16 @@ const ap = function (spec_fst) {
 // const of = create ();
 const of = function (spec_fst) {
     return function (ignore) {
-        return create (spec_fst.empty ());
+        return create(spec_fst.empty());
     };
 };
 
 // Bifunctor :: (a->b) -> (c->d) -> Pair<a, c> -> Pair<b, d>
 const bimap = function (f) {
     return function (g) {
-        return converge (create) (compose (f) (fst)) (compose (g) (snd));
+        return converge(create)(compose(f)(fst))(compose(g)(snd));
 //        return function (x) {
-//            return create (f (fst (x)) (g (snd (x)));
+//            return create (f (fst (x))(g (snd (x)));
 //        };
     };
 };
@@ -161,21 +160,23 @@ const bimap = function (f) {
 const chain = function (spec_fst) {
     return function (ignore) {
         return function (f) {
-            const apply_f = compose (f) (snd);
-            const to_fst = converge (spec_fst.concat) (
+            const apply_f = compose(f)(snd);
+            const to_fst = converge(
+                spec_fst.concat
+            )(
                 fst
-            ) (
-                compose (fst) (apply_f)
+            )(
+                compose(fst)(apply_f)
             );
-            const to_snd = compose (snd) (apply_f);
-            return converge (create) (to_fst) (to_snd);
+            const to_snd = compose(snd)(apply_f);
+            return converge(create)(to_fst)(to_snd);
         };
     };
 };
 
 // Extend :: ((a, b)-> c) -> (a, b) -> (a, c)
 const extend = function (f) {
-    return converge (create) (fst) (f);
+    return converge(create)(fst)(f);
 };
 
 const extract = snd;
@@ -183,21 +184,22 @@ const extract = snd;
 // Foldable :: ((b, a) -> b, b, <a>) -> b
 const reduce = function (f) {
     return function (acc) {
-        return function (x) {
-            return f (acc) (snd (x));
-        };
+        return compose(f(acc))(snd);
+//        return function (x) {
+//            return f (acc)(snd (x));
+//        };
     };
 };
 
 // Traversable :: Applicative<U> -> (a -> U<b>) -> T<a> -> U<T<b>>
 const traverse = function (to_T) {
     return function (f) {
-        return converge (
+        return converge(
             to_T.map
-        ) (
-            compose (create) (fst)
-        ) (
-            compose (f) (snd)
+        )(
+            compose(create)(fst)
+        )(
+            compose(f)(snd)
         );
     };
 };
@@ -205,16 +207,22 @@ const traverse = function (to_T) {
 // Semigroupoid :: (a, b) -> (b, c) -> (a, c)
 const adt_compose = function (pairA) {
     return function (pairB) {
-        return create (fst (pairA)) (snd (pairB));
+        return create(fst(pairA))(snd(pairB));
     };
 };
 
 const validate = function (fstT) {
     return function (sndT) {
-        return either (is_object) (
-            andf (compose (fstT.validate) (fst)) (compose (sndT.validate) (snd))
-        ) (
-            constant (false)
+        return functional_if(
+            is_object
+        )(
+            andf(
+                compose(fstT.validate)(fst)
+            )(
+                compose(sndT.validate)(snd)
+            )
+        )(
+            constant(false)
         );
 //        return function (x) {
 //            return (
@@ -229,56 +237,58 @@ const validate = function (fstT) {
 const type_factory = function (spec_fst) {
     return function (spec_snd) {
         const base_type = {
-            spec: "StaticLand",
+            spec: "curried-static-land",
             version: 1,
             type_name,
             fst,
             snd,
             bimap,
             create,
-            validate: either (is_object) (
-                andf (object_has_property ("fst")) (object_has_property ("snd"))
-            ) (
-                constant (false)
+            validate: functional_if(
+                is_object
+            )(
+                andf(object_has_property("fst"))(object_has_property("snd"))
+            )(
+                constant(false)
             ),
             reduce,
             map,
-            of: create (),
+            of: create(),
             traverse,
             extend,
             extract,
             compose: adt_compose
         };
 
-        if (is_object (spec_fst) && is_object (spec_snd)) {
+        if (is_object(spec_fst) && is_object(spec_snd)) {
 
-            const check_for_prop = and (
-                flip (object_has_property) (spec_fst)
-            ) (
-                flip (object_has_property) (spec_snd)
+            const check_for_prop = and(
+                flip(object_has_property)(spec_fst)
+            )(
+                flip(object_has_property)(spec_snd)
             );
 
-            if (check_for_prop ("equals")) {
-                base_type.equals = equals (spec_fst) (spec_snd);
+            if (check_for_prop("equals")) {
+                base_type.equals = equals(spec_fst)(spec_snd);
             }
 
-            if (check_for_prop ("lte")) {
-                base_type.lte = lte (spec_fst) (spec_snd);
+            if (check_for_prop("lte")) {
+                base_type.lte = lte(spec_fst)(spec_snd);
             }
 
-            if (check_for_prop ("concat")) {
-                base_type.concat = concat (spec_fst) (spec_snd);
-                base_type.ap = ap (spec_fst) (spec_snd);
-                base_type.chain = chain (spec_fst) (spec_snd);
+            if (check_for_prop("concat")) {
+                base_type.concat = concat(spec_fst)(spec_snd);
+                base_type.ap = ap(spec_fst)(spec_snd);
+                base_type.chain = chain(spec_fst)(spec_snd);
             }
 
-            if (check_for_prop ("empty")) {
-                base_type.empty = empty (spec_fst) (spec_snd);
-                base_type.of = of (spec_fst) (spec_snd);
+            if (check_for_prop("empty")) {
+                base_type.empty = empty(spec_fst)(spec_snd);
+                base_type.of = of(spec_fst)(spec_snd);
             }
 
-            if (check_for_prop ("validate")) {
-                base_type.validate = validate (spec_fst) (spec_snd);
+            if (check_for_prop("validate")) {
+                base_type.validate = validate(spec_fst)(spec_snd);
             }
 
             base_type.type_name += "<" +
@@ -290,12 +300,12 @@ const type_factory = function (spec_fst) {
     };
 };
 
-//test const testT = type_factory (slm.str) (slm.num_prod);
-//test const either_str_numT = either_type (slm.str) (slm.num_prod);
-//test const array_of_numT = array_type (slm.num_prod);
-//test const str_fxs = array_map (jsc.literal) ([
-//test     string_concat ("_"),
-//test     flip (string_concat) ("!"),
+//test const testT = type_factory(slm.str)(slm.num_prod);
+//test const either_str_numT = either_type(slm.str)(slm.num_prod);
+//test const array_of_numT = array_type(slm.num_prod);
+//test const str_fxs = array_map(jsc.literal)([
+//test     string_concat("_"),
+//test     flip(string_concat)("!"),
 //test     function (str) {
 //test         return str.slice(0, 2);
 //test     },
@@ -303,170 +313,170 @@ const type_factory = function (spec_fst) {
 //test         return str.split("").reverse().join("");
 //test     }
 //test ]);
-//test const num_fxs = array_map (jsc.literal) ([
-//test     add (10),
-//test     exponent (2),
-//test     multiply (3),
-//test     multiply (-1),
+//test const num_fxs = array_map(jsc.literal)([
+//test     add(10),
+//test     exponent(2),
+//test     multiply(3),
+//test     multiply(-1),
 //test     Math.floor
 //test ]);
 //test const either_to_array = function (x) {
 //test     if (x.type_name === "Left") {
 //test         return [];
 //test     }
-//test     return array_of_numT.of (x.value);
+//test     return array_of_numT.of(x.value);
 //test };
-//test const test_roster = adtTests ({
+//test const test_roster = adtTests({
 //test     functor: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
 //test             f: jsc.wun_of(num_fxs),
 //test             g: jsc.wun_of(num_fxs)
-//test         }]
+//test         }
 //test     },
 //test     apply: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
-//test             u: converge (testT.create) (
+//test             u: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.wun_of(num_fxs)
 //test             ),
-//test             v: converge (testT.create) (
+//test             v: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.wun_of(num_fxs)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     applicative: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
-//test             u: converge (testT.create) (
+//test             u: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.wun_of(num_fxs)
 //test             ),
 //test             f: jsc.wun_of(num_fxs),
 //test             x: jsc.integer(-99, 99)
-//test         }]
+//test         }
 //test     },
 //test     bifunctor: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
 //test             f: jsc.wun_of(str_fxs),
 //test             g: jsc.wun_of(str_fxs),
 //test             h: jsc.wun_of(num_fxs),
 //test             i: jsc.wun_of(num_fxs)
-//test         }]
+//test         }
 //test     },
 //test     chain: {
 //test         T: testT,
-//test         signature: [{
+//test         signature: {
 //test             f: jsc.literal(
-//test                 converge (testT.create) (String) (jsc.wun_of(num_fxs) ())
+//test                 converge(testT.create)(String)(jsc.wun_of(num_fxs)())
 //test             ),
 //test             g: jsc.literal(
-//test                 converge (testT.create) (String) (jsc.wun_of(num_fxs) ())
+//test                 converge(testT.create)(String)(jsc.wun_of(num_fxs)())
 //test             ),
-//test             u: converge (testT.create) (
+//test             u: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     monad: {
 //test         T: testT,
-//test         signature: [{
+//test         signature: {
 //test             a: jsc.integer(-99, 99),
 //test             f: jsc.literal(
-//test                 converge (testT.create) (String) (jsc.wun_of(num_fxs) ())
+//test                 converge(testT.create)(String)(jsc.wun_of(num_fxs)())
 //test             ),
-//test             u: converge (testT.create) (
+//test             u: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     extend: {
 //test         T: testT,
-//test         signature: [{
-//test             f: jsc.literal(compose (jsc.wun_of(num_fxs) ()) (snd)),
-//test             g: jsc.literal(compose (jsc.wun_of(num_fxs) ()) (snd)),
-//test             w: converge (testT.create) (
+//test         signature: {
+//test             f: jsc.literal(compose(jsc.wun_of(num_fxs)())(snd)),
+//test             g: jsc.literal(compose(jsc.wun_of(num_fxs)())(snd)),
+//test             w: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     comonad: {
 //test         T: testT,
-//test         signature: [{
-//test             f: jsc.literal(compose (jsc.wun_of(num_fxs) ()) (snd)),
-//test             w: converge (testT.create) (
+//test         signature: {
+//test             f: jsc.literal(compose(jsc.wun_of(num_fxs)())(snd)),
+//test             w: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }],
-//test         compare_with: array_map (prop ("equals")) ([
+//test         },
+//test         compare_with: array_map(prop("equals"))([
 //test             testT,
 //test             slm.num_prod
 //test         ])
 //test     },
 //test     foldable: {
 //test         T: testT,
-//test         signature: [{
+//test         signature: {
 //test             f: jsc.literal(jsc.wun_of([add, max])),
 //test             x: 0,
-//test             u: converge (testT.create) (
+//test             u: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }],
+//test         },
 //test         compare_with: slm.num_prod.equals
 //test     },
 //test     traversable: {
 //test         T: testT,
-//test         signature: [{
+//test         signature: {
 //test             A: either_str_numT,
 //test             B: array_of_numT,
 //test             a: jsc.wun_of([
-//test                 compose (either_str_numT.left) (jsc.string()),
-//test                 compose (either_str_numT.right) (jsc.integer(-99, 99))
+//test                 compose(either_str_numT.left)(jsc.string()),
+//test                 compose(either_str_numT.right)(jsc.integer(-99, 99))
 //test             ]),
 //test             f: jsc.literal(either_to_array),
 //test             g: jsc.wun_of(num_fxs),
-//test             u: converge (testT.create) (
+//test             u: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.wun_of([
-//test                     compose (either_str_numT.left) (jsc.string()),
-//test                     compose (either_str_numT.right) (
+//test                     compose(either_str_numT.left)(jsc.string()),
+//test                     compose(either_str_numT.right)(
 //test                         jsc.array(
 //test                             jsc.integer(3, 8),
 //test                             jsc.integer(-99, 99)
@@ -474,147 +484,147 @@ const type_factory = function (spec_fst) {
 //test                     )
 //test                 ])
 //test             )
-//test         }],
-//test         compare_with: array_map (prop ("equals")) ([
+//test         },
+//test         compare_with: array_map(prop("equals"))([
 //test             array_of_numT,
-//test             compose (array_type) (type_factory (slm.str)) (array_of_numT),
-//test             compose (array_type) (type_factory (slm.str)) (
-//test                 either_type (slm.str) (array_of_numT)
+//test             compose(array_type)(type_factory(slm.str))(array_of_numT),
+//test             compose(array_type)(type_factory(slm.str))(
+//test                 either_type(slm.str)(array_of_numT)
 //test             ),
-//test             compose (either_type (slm.str)) (array_type) (testT)
+//test             compose(either_type(slm.str))(array_type)(testT)
 //test         ])
 //test     },
 //test     semigroupoid: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
-//test             b: converge (testT.create) (
+//test             b: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
-//test             c: converge (testT.create) (
+//test             c: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     semigroup: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
-//test             b: converge (testT.create) (
+//test             b: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             ),
-//test             c: converge (testT.create) (
+//test             c: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     monoid: {
 //test         T: testT,
-//test         signature: [{
-//test             a: converge (testT.create) (
+//test         signature: {
+//test             a: converge(testT.create)(
 //test                 jsc.string()
-//test             ) (
+//test             )(
 //test                 jsc.integer(-99, 99)
 //test             )
-//test         }]
+//test         }
 //test     },
 //test     setoid: {
 //test         T: testT,
-//test         signature: [{
+//test         signature: {
 //test             a: jsc.wun_of([
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.wun_of(["ah", "the", "string"])
-//test                 ) (
+//test                 )(
 //test                     jsc.wun_of([11, 31, 97])
 //test                 ),
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.string()
-//test                 ) (
+//test                 )(
 //test                     jsc.integer(-99, 99)
 //test                 )
 //test             ]),
 //test             b: jsc.wun_of([
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.wun_of(["ah", "the", "string"])
-//test                 ) (
+//test                 )(
 //test                     jsc.wun_of([11, 31, 97])
 //test                 ),
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.string()
-//test                 ) (
+//test                 )(
 //test                     jsc.integer(-99, 99)
 //test                 )
 //test             ]),
 //test             c: jsc.wun_of([
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.wun_of(["ah", "the", "string"])
-//test                 ) (
+//test                 )(
 //test                     jsc.wun_of([11, 31, 97])
 //test                 ),
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.string()
-//test                 ) (
+//test                 )(
 //test                     jsc.integer(-99, 99)
 //test                 )
 //test             ])
-//test         }]
+//test         }
 //test     },
 //test     ord: {
 //test         T: testT,
-//test         signature: [{
+//test         signature: {
 //test             a: jsc.wun_of([
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.wun_of(["ah", "the", "string"])
-//test                 ) (
+//test                 )(
 //test                     jsc.wun_of([11, 31, 97])
 //test                 ),
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.string()
-//test                 ) (
+//test                 )(
 //test                     jsc.integer(-99, 99)
 //test                 )
 //test             ]),
 //test             b: jsc.wun_of([
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.wun_of(["ah", "the", "string"])
-//test                 ) (
+//test                 )(
 //test                     jsc.wun_of([11, 31, 97])
 //test                 ),
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.string()
-//test                 ) (
+//test                 )(
 //test                     jsc.integer(-99, 99)
 //test                 )
 //test             ]),
 //test             c: jsc.wun_of([
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.wun_of(["ah", "the", "string"])
-//test                 ) (
+//test                 )(
 //test                     jsc.wun_of([11, 31, 97])
 //test                 ),
-//test                 converge (testT.create) (
+//test                 converge(testT.create)(
 //test                     jsc.string()
-//test                 ) (
+//test                 )(
 //test                     jsc.integer(-99, 99)
 //test                 )
 //test             ])
-//test         }]
+//test         }
 //test     }
 //test });
 //test test_roster.forEach(jsc.claim);

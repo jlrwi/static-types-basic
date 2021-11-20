@@ -1,21 +1,23 @@
 {
       "name": "@jlrwi/static-types-basic",
-      "version": "1.3.0",
-      "description": "Basic Static Land Algebraic Data Types",
+      "version": "1.4.0",
+      "description": "Basic curried-static-land Algebraic Data Types",
       "main": "index.js",
+      "homepage": "https://github.com/jlrwi/static-types-basic",
+      "repository": "github:jlrwi/static-types-basic",
       "devDependencies": {
-            "@jlrwi/adt_tests": "file:../adt_tests",
-            "@jlrwi/es-static-types": "file:../esstatictypes",
-            "@jlrwi/jscheck": "file:../jscheck",
+            "@jlrwi/adt-tests": "github:jlrwi/adt-tests",
+            "@jlrwi/es-static-types": "github:jlrwi/es-static-types",
+            "@jlrwi/jscheck": "github:jlrwi/jscheck",
             "@jlrwi/package-processor": "file:../pkg_processor"
       },
       "dependencies": {
-            "@jlrwi/combinators": "file:../combinators",
-            "@jlrwi/esfunctions": "file:../esfunctions"
+            "@jlrwi/combinators": "github:jlrwi/combinators",
+            "@jlrwi/esfunctions": "github:jlrwi/esfunctions"
       },
       "scripts": {
             "pretest": "batch-process --pretest ./modules.json",
-            "test": "node --experimental-modules ./test/test_modules.js",
+            "test": "node ./test/test_modules.js",
             "posttest": "type test.log",
             "stage": "batch-process --min ./modules.json"
       },
