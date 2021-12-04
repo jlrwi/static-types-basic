@@ -2,25 +2,26 @@
     fudge
 */
 
+//MD # constant_type/p
+//MD If this type is instantiated with a monoid, it will behave
+//MD like an Applicative, using .concat() for .ap(), and .empty() for .of().
+//MD This allows the sort-of Applicative to be used with traversal functions,
+//MD with different types of monoids producing different results./p
+//MD ## References:/p
+//MD Sanctuary Constant:/p
+//MD https://github.com/sanctuary-js/sanctuary-constant//p
+//MD Explanation of partial lenses:/p
+//MD https://calmm-js.github.io/partial.lenses/implementation.html/p
+
+//MD ## Module methods/p
+
 /*
-Attempts to make this type function as an Applicative using straightforward
-logic don't succeed in passing the tests.
-
-If Constant is instantiated with a monoid, it can be derived to behave like an
-Applicative, using .concat() for .ap(), and .empty() for .of()
-
-This allows the sort-of Applicative to be used with traversal functions, with
-different monoids (eg arrays vs. numbers) producing different results.
-
-References:
-Sanctuary Constant:
-https://github.com/sanctuary-js/sanctuary-constant/
-
-Explanation of partial lenses
-https://calmm-js.github.io/partial.lenses/implementation.html
+Attempts to make this type an Applicative using straightforward logic don't
+succeed in passing the tests.
 */
 
 import {
+//test     converge,
     constant,
     compose,
     compose2,
@@ -33,6 +34,7 @@ import {
 //test     array_map,
 //test     equals,
     is_object,
+    andf,
     prop,
     object_has_property,
     minimal_object
@@ -46,12 +48,44 @@ import {
 
 const type_name = "Constant";
 
+// Comonad :: <a> -> a
 const extract = prop("value");
 
-const empty = function (T) {
-    return compose(create)(T.empty);
+//MD ### .create(x)/p
+//MD Returns `x` wrapped in a Constant./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create(7);/p
+//MD {type_name: "Constant", value: 7}/p
+//MD ```/p
+const create = function (x) {
+    return minimal_object({
+        type_name,
+        toJSON: constant("Constant (" + JSON.stringify(x) + ")"),
+        value: x
+    });
 };
 
+//MD ### .equals(a)(b)/p
+//MD Type module must be instantiated with a Setoid for this method to be
+//MD available./p
+// Setoid :: a -> a -> boolean
+const adt_equals = function (T) {
+    return on(T.equals)(extract);
+};
+
+//MD ### .lte(a)(b)/p
+//MD Type module must be instantiated with an Ord for this method to be
+//MD available. Evaluates if b is lte a./p
+// Ord :: a -> a -> boolean
+const lte = function (T) {
+    return on(T.lte)(extract);
+};
+
+//MD ### .concat(a)(b)/p
+//MD Type module must be instantiated with a Semigroup for this method to be
+//MD available./p
+// Semigroup: a -> a -> a
 const concat = function (T) {
     return compose2(
         create
@@ -60,23 +94,39 @@ const concat = function (T) {
     );
 };
 
-const adt_equals = function (T) {
-    return on(T.equals)(extract);
+//MD ### .empty()/p
+//MD Type module must be instantiated with a Monoid for this method to be
+//MD available./p
+// Monoid :: () -> a
+const empty = function (T) {
+    return compose(create)(T.empty);
 };
 
-const lte = function (T) {
-    return on(T.lte)(extract);
-};
-
+//MD ### .map(f)(a)/p
+//MD As a constant, f is ignored and a is returned unchanged./p
 // Discard the f parameter and just return the unchanged Constant
+// Functor :: (a -> b) -> a -> b
 const map = second;
 
+//MD ### .extend(f)(a)/p
+//MD As a constant, f is ignored and a is returned unchanged./p
+// Extend :: (<a> -> b) -> <a> -> <b>
+const extend = second;
+
+//MD ### .extract(a)/p
+//MD Extracts the value from the Constant./p
+
+//MD ### .reduce(f)(initial)(a)/p
+//MD Returns the `initial` value unchanged./p
+//MD As a constant, f is ignored and a is returned unchanged./p
 // Foldable :: ((b, a) -> b) -> b -> C a -> b
-//                ignored               ignored
+//                ignored             ignored
 const reduce = function (ignore) {
     return constant;
 };
 
+//MD ### .traverse(type_module)(f)(a)/p
+//MD Ignores `f` and returns `a` wrapped in type `type_module`./p
 // Traversable :: Applicative<U> -> (a -> U<b>) -> C a -> U<C b>
 //                                    ignored
 const traverse = function (U) {
@@ -85,6 +135,10 @@ const traverse = function (U) {
     };
 };
 
+//MD ### .validate(a)/p
+//MD If not instantiated with a type module, checks if parameter is an object
+//MD with a value property. If instantiated with a type module, validates
+//MD contents./p
 const validate = function (T) {
     return function (x) {
         return (
@@ -95,24 +149,17 @@ const validate = function (T) {
     };
 };
 
-const create = function (x) {
-    return minimal_object({
-        type_name,
-        toJSON: constant("Constant (" + JSON.stringify(x) + ")"),
-        value: x
-    });
-};
-
 const type_factory = function (type_of) {
     const base_type = {
         spec: "curried-static-land",
         version: 1,
         type_name,
         map,
+        extend,
         create,
         reduce,
         traverse,
-        validate: is_object,
+        validate: andf(object_has_property("value"))(is_object),
         extract
     };
 
@@ -188,6 +235,33 @@ const type_factory = function (type_of) {
 //test             f: jsc.wun_of(test_fxs),
 //test             u: invoke_of(jsc.wun_of(test_fxs)),
 //test             x: jsc.string()
+//test         }
+//test     },
+//test     extend: {
+//test         T: testT,
+//test         signature: {
+//test             f: converge(compose)(
+//test                 jsc.wun_of(test_fxs)
+//test             )(
+//test                 constant(prop("value"))
+//test             ),
+//test             g: converge(compose)(
+//test                 jsc.wun_of(test_fxs)
+//test             )(
+//test                 constant(prop("value"))
+//test             ),
+//test             w: invoke_of(jsc.string())
+//test         }
+//test     },
+//test     comonad: {
+//test         T: testT,
+//test         signature: {
+//test             f: converge(compose)(
+//test                 jsc.wun_of(test_fxs)
+//test             )(
+//test                 constant(prop("value"))
+//test             ),
+//test             w: invoke_of(jsc.string())
 //test         }
 //test     },
 //test     foldable: {

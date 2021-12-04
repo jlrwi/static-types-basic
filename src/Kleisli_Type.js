@@ -2,6 +2,9 @@
     fudge
 */
 
+//MD # kleisli_type/p
+//MD A derivation of pair_type/p
+
 // log should be fst because pair map operates on snd
 
 //erase /*
@@ -26,12 +29,26 @@ import {
 //test import jsCheck from "@jlrwi/jscheck";
 //test let jsc = jsCheck();
 
+//MD ## Instantiation
+//MD Syntax: kleisli_type(type_name)(log_type)(value_type)
 const type_factory = function (type_name) {
     return function (log_type) {
         return function (value_type) {
             const pairT = pair_type(log_type)(value_type);
 
-// (b->(c,s)) -> (a->(b,s)) -> a -> (c,s)
+//MD ## Module methods/p
+
+//MD ### .create(embellishment)(value)/p
+            const create = pairT.create;
+
+//MD ### .equals(a)(b)/p
+// Needed for adt tests
+// Setoid :: a -> a -> boolean
+            const equals = pairT.equals;
+
+//MD ### .compose(f)(g)(x)/p
+//MD Kleisli composition./p
+// Semigroupoid :: (b->(c,s)) -> (a->(b,s)) -> a -> (c,s)
             const compose = function (f) {
                 return function (g) {
                     return function (x) {
@@ -51,10 +68,13 @@ const type_factory = function (type_name) {
                 };
             };
 
-            //  id :: a -> (a, s)
+//MD ### .id(f)/p
+//MD Creates value with empty log type./p
+// Category :: id :: a -> (a, s)
             const id = pairT.create(log_type.empty());
 
-            // Embellish a unary fx with a constant
+//MD ### .embellish_function(f)/p
+//MD Embellish a unary function with a constant/p
             const embellish_function = function (f) {
                 return function (fst) {
                     return pipe(
@@ -65,8 +85,8 @@ const type_factory = function (type_name) {
                 };
             };
 
-// Needed for adt tests
-            const equals = pairT.equals;
+//MD ### .validate(a)/p
+//MD Validate the Kleisli pair./p
 
             return Object.freeze({
                 spec: "curried-static-land",
@@ -76,8 +96,8 @@ const type_factory = function (type_name) {
                 compose,
                 id,
                 embellish_function,
-                create: pairT.create,
-                valiate: pairT.validate
+                create,
+                validate: pairT.validate
             });
         };
     };

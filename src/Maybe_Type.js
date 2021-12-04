@@ -2,6 +2,11 @@
     fudge
 */
 
+//MD # maybe_type/p
+//MD This type includes the Nothing and Just types./p
+
+//MD ## Module methods/p
+
 //erase /*
 import nil_type from "../src/Nil_Type.js";
 //erase */
@@ -39,8 +44,16 @@ const nilT = nil_type();
 
 const type_name = "Maybe";
 
+// NOT a comonad - used internally
 const extract = prop("value");
 
+//MD ### .nothing(x)/p
+//MD Returns `x` wrapped in a Nothing. The value is superflouous./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.nothing(7);/p
+//MD {type_name: "Nothing", value: 7}/p
+//MD ```/p
 const nothing = function (x) {
     return minimal_object({
         type_name: "Nothing",
@@ -49,6 +62,13 @@ const nothing = function (x) {
     });
 };
 
+//MD ### .just(x)/p
+//MD Returns `x` wrapped in a Just./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.just(7);/p
+//MD {type_name: "Just", value: 7}/p
+//MD ```/p
 const just = function (x) {
     return minimal_object({
         type_name: "Just",
@@ -57,12 +77,23 @@ const just = function (x) {
     });
 };
 
+//MD ### .is_Nothing(a)/p
+//MD Test if an object is a Nothing./p
+const is_Nothing = compose(equals("Nothing"))(prop("type_name"));
+
+//MD ### .is_Just(a)/p
+//MD Test if an object is a Just./p
+const is_Just = compose(equals("Just"))(prop("type_name"));
+
+//MD ### .create(x)/p
+//MD If `x` is a bottom value, return a Nothing. Otherwise return a Just./p
 // a -> M<a>
 const create = functional_if(nilT.validate)(nothing)(just);
 
-const is_Just = compose(equals("Just"))(prop("type_name"));
-const is_Nothing = compose(equals("Nothing"))(prop("type_name"));
 
+//MD ### .equals(a)(b)/p
+//MD Type module must be instantiated with a Setoid for this method to be
+//MD available./p
 // Setoid :: a -> a -> boolean
 const adt_equals = function (T) {
     return function (y) {
@@ -80,6 +111,9 @@ const adt_equals = function (T) {
     };
 };
 
+//MD ### .lte(a)(b)/p
+//MD Type module must be instantiated with an Ord for this method to be
+//MD available. Evaluates if b is lte a. A Nothing is less than a Just./p
 // Ord :: a -> a -> Boolean
 const lte = function (T) {
     return function (y) {
@@ -98,6 +132,9 @@ const lte = function (T) {
     };
 };
 
+//MD ### .concat(a)(b)/p
+//MD Type module must be instantiated with a Semigroup for this method to be
+//MD available.  A Nothing as either parameter is ignored./p
 // Semigroup :: a -> a -> a
 const concat = function (T) {
     return function (y) {
@@ -115,9 +152,13 @@ const concat = function (T) {
     };
 };
 
+//MD ### .empty()/p
+//MD Returns a Nothing./p
 // Monoid :: () -> a
 const empty = nothing;
 
+//MD ### .map(f)(a)/p
+//MD The function is only applied to Just values./p
 // Functor :: (a -> b) -> a -> b
 const map = function (f) {
     return functional_if(
@@ -133,6 +174,8 @@ const map = function (f) {
     );
 };
 
+//MD ### .alt(a)(b)/p
+//MD Returns the `b` value unless it is Nothing./p
 // Alt :: <a> -> <a> -> <a>
 const alt = function (y) {
     return functional_if(
@@ -144,9 +187,13 @@ const alt = function (y) {
     );
 };
 
+//MD ### .zero()/p
+//MD Returns a Nothing./p
 // Plus :: () -> a
 const zero = empty;
 
+//MD ### .ap(Maybe<f>)(Maybe<a>)/p
+//MD Applies the `f` to `a`. If either value is Nothing, Nothing is returned./p
 // Apply :: <(a -> b)> -> <a> -> <b>
 const ap = function (mf) {
     return function (mx) {
@@ -158,9 +205,13 @@ const ap = function (mf) {
     };
 };
 
+//MD ### .of(x)/p
+//MD Wraps `x` in a Just./p
 // Applicative :: a -> <a>
 const of = just;
 
+//MD ### .chain(f)(a)/p
+//MD Applies `f` to `a` unless it's a Nothing./p
 // Chain :: (a -> <b>) -> <a> -> <b>
 const chain = function (f) {
     return functional_if(
@@ -172,6 +223,8 @@ const chain = function (f) {
     );
 };
 
+//MD ### .reduce(f)(initial)(a)/p
+//MD If `a` is Nothing, return the initial value./p
 // Foldable :: ((b, a) -> b, b, <a>) -> b
 const reduce = function (f) {
     return function (initial) {
@@ -185,6 +238,8 @@ const reduce = function (f) {
     };
 };
 
+//MD ### .traverse(type_module)(f)(a)/p
+//MD If `a` is Nothing, returns Nothing wrapped in type_module./p
 // Traversable :: Applicative<U> -> (a -> U<b>) -> T<a> -> U<T<b>>
 const traverse = function (to_T) {
     return function (f) {
@@ -202,6 +257,8 @@ const traverse = function (to_T) {
     };
 };
 
+//MD ### .filter(f)(a)/p
+//MD Returns `a` if its contents pass the filter, otherwise returns Nothing/p
 // Filterable :: (a -> Boolean) -> <a> -> <a>
 const filter = function (f) {
     return functional_if(
@@ -223,6 +280,9 @@ const filter = function (f) {
     );
 };
 
+//MD ### .validate(a)/p
+//MD Validate `a` as a Just or Nothing. If instantiated with a type module,
+//MD contents will be validated./p
 const validate = function (T) {
     return functional_if(
         andf(object_has_property("type_name"))(is_object)
@@ -259,7 +319,7 @@ const type_factory = function (type_of) {
         chain,
         traverse,
         filter,
-        validate: andf(is_object)(orf(is_Just)(is_Nothing))
+        validate: andf(orf(is_Just)(is_Nothing))(is_object)
     };
 
     if (is_object(type_of)) {

@@ -2,6 +2,10 @@
     fudge
 */
 
+//MD # any_number_type/p
+//MD This is a numeric pair for storing real and complex numbers./p
+//MD ## Module methods/p
+
 import {
     constant
 } from "@jlrwi/combinators";
@@ -20,15 +24,23 @@ import {
 
 const type_name = "Any Number";
 
+//MD ### .create(real_component, [imaginary_component])/p
+//MD The create method takes a numeric value representing the real component of
+//MD the number and an optional second numeric value that specifies the
+//MD imaginary component./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create(3, 7);/p
+//MD {type_name: "Any Number", r: 3, i: 7}/p
+//MD ```/p
 const create = function (r = 0, i = 0) {
     return minimal_object({
         type_name,
         toJSON: constant(
-            "Any Number (" +
+            type_name + " (" +
             JSON.stringify(r) +
             " + " +
-            JSON.stringify(i) +
-            "i" +
+            JSON.stringify(i) + "i" +
             ")"
         ),
         r,
@@ -36,39 +48,75 @@ const create = function (r = 0, i = 0) {
     });
 };
 
-const concat = function (y) {
-    return function (x) {
-        return create(y.r + x.r, y.i + x.i);
-    };
-};
-
-const empty = function () {
-    return create(0, 0);
-};
-
-const invert = function (x) {
-    return create(0 - x.r, 0 - x.i);
-};
-
+//MD ### .equals(a)(b)/p
+// Setoid :: a -> a -> boolean
 const adt_equals = function (x) {
     return function (y) {
         return ((x.r === y.r) && (x.i === y.i));
     };
 };
 
+//MD ### .lte(a)(b)/p
+//MD Determines if b is less than or equal to a. Comparison is made using the
+//MD distance from the origin of the complex plane./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.lte({r: -3, i: 7})({r: 1, i: 4});/p
+//MD true/p
+//MD ```/p
+// Ord :: a -> a -> boolean
 const lte = function (y) {
     return function (x) {
         return ((x.r**2 + x.i**2) <= (y.r**2 + y.i**2));
     };
 };
 
+//MD ### .concat(a)(b)/p
+//MD The concat method operates as a numeric sum of each component./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.concat({r: 3, i: 7})({r: -1, i: 4});/p
+//MD {type_name: "Any Number", r: 2, i: 11}/p
+//MD ```/p
+// Semigroup :: {a} -> {a} -> {a}
+const concat = function (y) {
+    return function (x) {
+        return create(y.r + x.r, y.i + x.i);
+    };
+};
+
+//MD ### .empty()/p
+//MD Produces a zero value./p
+// Monoid :: () -> {r: 0, i: 0}
+const empty = function () {
+    return create(0, 0);
+};
+
+//MD ### .invert(a)/p
+//MD Produces the negative inverse of both component values./p
+// Group :: a -> a
+const invert = function (x) {
+    return create(-x.r, -x.i);
+};
+
+//MD ### .map(f)(a)/p
+//MD Applies function `f` to both component values./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.map(add(5))({r: -1, i: 4});/p
+//MD {type_name: "Any Number", r: 4, i: 9}/p
+//MD ```/p
+// Functor :: (a -> b) -> a -> b
 const map = function (f) {
     return function (x) {
         return create(f(x.r), f(x.i));
     };
 };
 
-// Bifunctor :: (a->b) -> (c->d) -> Pair<a, c> -> Pair<b, d>
+//MD ### .bimap(f)(g)(a)/p
+//MD Applies function `f` to the real component and function `g` to the
+//MD imaginary component./p
+// Bifunctor :: (a->b) -> (c->d) -> <a, c> -> <b, d>
 const bimap = function (f) {
     return function (g) {
         return function (x) {
@@ -77,19 +125,27 @@ const bimap = function (f) {
     };
 };
 
-const complex_multiply = function (y) {
-    return function (x) {
-        return create((x.r * y.r) - (x.i * y.i))((x.r * y.i) + (x.i * y.r));
-    };
-};
-
+//MD ### .validate(a)/p
 const validate = function (x) {
     return (
         is_object(x) && type_check("number")(x.r) && type_check("number")(x.i)
     );
 };
 
-const type_factory = function (ignore) {
+//MD ### .multiply(a)(b)/p
+//MD Performs complex number multiplication on two values.
+//MD Example:/p
+//MD ```/p
+//MD type_module.multiply({r: 2, i: 1})({r: 1, i: 1});/p
+//MD {type_name: "Any Number", r: 1, i: 3}/p
+//MD ```/p
+const complex_multiply = function (y) {
+    return function (x) {
+        return create((x.r * y.r) - (x.i * y.i))((x.r * y.i) + (x.i * y.r));
+    };
+};
+
+const type_factory = function () {
     return Object.freeze({
         spec: "curried-static-land",
         version: 1,

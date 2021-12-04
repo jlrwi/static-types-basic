@@ -2,6 +2,12 @@
     fudge
 */
 
+//MD # pair_type/p
+//MD Basic Pair data type. Additiona algebras become available if instantiated
+//MD with types for both elements./p
+
+//MD ## Module methods/p
+
 import {
     compose,
     constant,
@@ -36,17 +42,19 @@ import {
 
 const type_name = "Pair";
 
-// Pair<a, b> -> a
-const fst = prop("fst");
-
-// Pair<a, b> -> b
-const snd = prop("snd");
-
+//MD ### .create(first_value)(second_value)/p
+//MD Returns a pair./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create("first")(7);/p
+//MD {type_name: "Pair", fst: "first", snd: 7}/p
+//MD ```/p
 // a -> b -> Pair<a, b>
 // Morphism between functors Function and Pair
 const create = function (fst) {
     return function (snd) {
         return minimal_object({
+            type_name,
             toJSON: constant(
                 "Pair (" + JSON.stringify(fst) + "," + JSON.stringify(snd) + ")"
             ),
@@ -56,6 +64,18 @@ const create = function (fst) {
     };
 };
 
+//MD ### .fst(a)/p
+//MD Retrieve the first value of a pair./p
+// Pair<a, b> -> a
+const fst = prop("fst");
+
+//MD ### .snd(a)/p
+//MD Retrieve the second value of a pair./p
+// Pair<a, b> -> b
+const snd = prop("snd");
+
+//MD ### .equals(a)(b)/p
+//MD Only available when type is instantiated with a pair of Setoids./p
 // Setoid :: T -> a -> a -> boolean
 const equals = function (spec_fst) {
     return function (spec_snd) {
@@ -71,6 +91,9 @@ const equals = function (spec_fst) {
     };
 };
 
+//MD ### .lte(a)(b)/p
+//MD Only available when type is instantiated with a pair of Ords. Measures
+//MD if `b` is less than or equal to `a`./p
 // Ord :: T -> a -> a -> boolean
 const lte = function (spec_fst) {
     return function (spec_snd) {
@@ -86,6 +109,9 @@ const lte = function (spec_fst) {
     };
 };
 
+//MD ### .concat(a)(b)/p
+//MD Concatenates each element of the pair. Only available when type is
+//MD instantiated with a pair of Semigroups./p
 // Semigroup :: T -> a -> a -> a
 const concat = function (spec_fst) {
     return function (spec_snd) {
@@ -101,26 +127,30 @@ const concat = function (spec_fst) {
     };
 };
 
+//MD ### .empty()/p
+//MD Only available when type is instantiated with a pair of Monoids. Each
+//MD element is set to the appropriate empty value./p
 // Monoid :: T -> _ -> a
 const empty = function (spec_fst) {
     return function (spec_snd) {
         return converge(create)(spec_fst.empty)(spec_snd.empty);
-//        return function () {
-//            return create(spec_fst.empty())(spec_snd.empty());
-//        };
     };
 };
 
 // Map, ap, reduce, and of are snd-biased
 
+//MD ### .map(f)(a)/p
+//MD Applies `f` to the second value of the pair./p
 // Functor :: (a -> b) -> a -> b
 const map = function (f) {
     return converge(create)(fst)(compose(f)(snd));
-//    return function (x) {
-//        return create (fst (x))(f (snd (x)));
-//    };
 };
 
+//MD ### .ap(f)(a)/p
+//MD Only available when type is instantiated with a Semigroup.
+//MD The first elements of the pairs are concatenated. The function in the
+//MD second element of the first pair is applied to the value in the second
+//MD element of the second pair./p
 // Apply :: F<a->b> -> F<a> -> F<b>
 // Must be given the spec types to harvest the concat function for fst
 // Otherwise is not lawful (fails Interchange test)
@@ -138,29 +168,39 @@ const ap = function (spec_fst) {
     };
 };
 
+//MD ### .of(x)/p
+//MD Returns a pair with an empty first element, setting the second element to
+//MD `x`. Only available when type is instantiated with a Monoid./p
 // Applicative :: a -> F<a>
-// const of = create ();
 const of = function (spec_fst) {
     return function (ignore) {
         return create(spec_fst.empty());
     };
 };
 
-// Bifunctor :: (a->b) -> (c->d) -> Pair<a, c> -> Pair<b, d>
-const bimap = function (f) {
-    return function (g) {
-        return converge(create)(compose(f)(fst))(compose(g)(snd));
-//        return function (x) {
-//            return create (f (fst (x))(g (snd (x)));
-//        };
-    };
-};
-
+//MD ### .chain(f)(a)/p
+//MD Returns the result of concatenating the first element of `a` and the result
+//MD of `f`, and the second element of the result of `f`. Only available when
+//MD type is instantiated with a Semigroup./p
 // Chain :: (b -> (a, c)) -> (a, b) -> (a, c)
 const chain = function (spec_fst) {
     return function (ignore) {
         return function (f) {
+            return function (x) {
+// Get the result of applying f to snd
+                const apply_f = f(snd(x));
+
+                return create(
+// Concat the original fst and the resulting fst
+                    spec_fst.concat(fst(x))(fst(apply_f))
+                )(
+// Use the resulting snd
+                    snd(apply_f)
+                );
+/*
+// f is applied to snd
             const apply_f = compose(f)(snd);
+
             const to_fst = converge(
                 spec_fst.concat
             )(
@@ -168,30 +208,51 @@ const chain = function (spec_fst) {
             )(
                 compose(fst)(apply_f)
             );
+
+// Retrieve the snd value the result of apply_f
             const to_snd = compose(snd)(apply_f);
             return converge(create)(to_fst)(to_snd);
+*/
+            };
         };
     };
 };
 
+//MD ### .bimap(f)(g)(a)/p
+//MD Applies `f` to the first element in `a`, and `g` to the second./p
+// Bifunctor :: (a->b) -> (c->d) -> Pair<a, c> -> Pair<b, d>
+const bimap = function (f) {
+    return function (g) {
+        return converge(create)(compose(f)(fst))(compose(g)(snd));
+    };
+};
+
+//MD ### .extend(f)(a)/p
+//MD Return value is the first element from `a` and the result of `f`./p
 // Extend :: ((a, b)-> c) -> (a, b) -> (a, c)
 const extend = function (f) {
     return converge(create)(fst)(f);
 };
 
+//MD ### .extract(a)/p
+//MD Returns the second element of the pair./p
+// Comonad :: (a, b) -> b
 const extract = snd;
 
+//MD ### .reduce(f)(initial_value)(a)/p
+//MD Returns the result of applying `f` to `initial_value` and the second
+//MD element of the pair./p
 // Foldable :: ((b, a) -> b, b, <a>) -> b
 const reduce = function (f) {
     return function (acc) {
         return compose(f(acc))(snd);
-//        return function (x) {
-//            return f (acc)(snd (x));
-//        };
     };
 };
 
-// Traversable :: Applicative<U> -> (a -> U<b>) -> T<a> -> U<T<b>>
+//MD ### .traverse(type_module)(f)(a)/p
+//MD Returns pair of first element and function result wrapped in
+//MD `type_module`./p
+// Traversable :: Applicative<U> -> (a -> U<b>) -> (c, a) -> U<(c, b)>
 const traverse = function (to_T) {
     return function (f) {
         return converge(
@@ -204,6 +265,8 @@ const traverse = function (to_T) {
     };
 };
 
+//MD ### .compose(a)(b)/p
+//MD Returns pair of first element of `a` and second element of `b`./p
 // Semigroupoid :: (a, b) -> (b, c) -> (a, c)
 const adt_compose = function (pairA) {
     return function (pairB) {
@@ -211,26 +274,18 @@ const adt_compose = function (pairA) {
     };
 };
 
+//MD ### .validate(a)/p
+//MD Validates internal structure of pair. If instantiated with types, elements
+//MD will also be validated./p
 const validate = function (fstT) {
     return function (sndT) {
-        return functional_if(
-            is_object
-        )(
-            andf(
-                compose(fstT.validate)(fst)
-            )(
-                compose(sndT.validate)(snd)
-            )
-        )(
-            constant(false)
-        );
-//        return function (x) {
-//            return (
-//                is_object (x)
-//                ? fstT.validate (fst (x)) && sndT.validate (snd (x))
-//                : false
-//            );
-//        };
+        return function (x) {
+            return (
+                is_object(x)
+                ? fstT.validate(fst(x)) && sndT.validate(snd(x))
+                : false
+            );
+        };
     };
 };
 

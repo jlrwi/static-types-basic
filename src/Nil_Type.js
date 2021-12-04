@@ -2,6 +2,11 @@
     fudge
 */
 
+//MD # nil_type/p
+//MD A type representing all bottom values in Javascript./p
+
+//MD ## Module methods/p
+
 import {
 //test     identity,
     constant,
@@ -33,6 +38,36 @@ const object_is_nil = function (o) {
     );
 };
 
+//MD ### .create(x)/p
+//MD Returns an empty, frozen object./p
+const create = compose(Object.freeze)(empty_object);
+
+//MD ### .equals(a)(b)/p
+//MD Returns true because all bottom values are considered to be equal./p
+// Setoid :: a -> a -> Boolean
+const type_equals = compose(constant)(constant(true));
+
+//MD ### .lte(a)(b)/p
+//MD Returns true because all bottom values are considered to be equal./p
+// Ord :: a -> a -> Boolean
+const lte = compose(constant)(constant(true));
+
+//MD ### .concat(a)(b)/p
+//MD The result of concatenating two bottom values is a bottom value./p
+const concat = constant;
+
+//MD ### .empty()/p
+//MD Returns an empty, frozen object./p
+const empty = create;
+
+//MD ### .map(f)(a)/p
+//MD Returns the value `a` because a bottom value cannot be changed./p
+// Functor :: (a -> b) -> a -> b
+const map = second;
+
+//MD ### .validate(a)/p
+//MD Tests for one of the following: undefined, null, NaN, or a frozen,empty
+//MD object./p
 const validate = function (x) {
     const testers = [
         equals(undefined),
@@ -43,21 +78,6 @@ const validate = function (x) {
 
     return testers.some(apply_with(x));
 };
-
-const create = compose(Object.freeze)(empty_object);
-
-// Setoid :: a -> a -> Boolean
-const type_equals = compose(constant)(constant(true));
-
-// Ord :: a -> a -> Boolean
-const lte = compose(constant)(constant(true));
-
-const concat = constant;
-
-const empty = create;
-
-// Functor :: (a -> b) -> a -> b
-const map = second;
 
 const type_factory = function () {
     return Object.freeze({

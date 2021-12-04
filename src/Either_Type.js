@@ -2,6 +2,11 @@
     fudge
 */
 
+//MD # either_type/p
+//MD This type includes the Left and Right types./p
+
+//MD ## Module methods/p
+
 //erase /*
 import nil_type from "../src/Nil_Type.js";
 //erase */
@@ -12,6 +17,7 @@ import {
     compose,
     identity,
     pipeN,
+    on,
     flip
 } from "@jlrwi/combinators";
 import {
@@ -42,8 +48,13 @@ import {
 const nilT = nil_type();
 const type_name = "Either";
 
-const extract = prop("value");
-
+//MD ### .left(x)/p
+//MD Returns `x` wrapped in a Left./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.left(7);/p
+//MD {type_name: "Left", value: 7}/p
+//MD ```/p
 const left = function (x) {
     return minimal_object({
         type_name: "Left",
@@ -52,6 +63,13 @@ const left = function (x) {
     });
 };
 
+//MD ### .right(x)/p
+//MD Returns `x` wrapped in a Right./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.right(7);/p
+//MD {type_name: "Right", value: 7}/p
+//MD ```/p
 const right = function (x) {
     return minimal_object({
         type_name: "Right",
@@ -60,7 +78,22 @@ const right = function (x) {
     });
 };
 
+//MD ### .is_left(Either<a>)/p
+//MD Returns a boolean indicating if parameter is a Left./p
+const is_left = compose(equals("Left"))(prop("type_name"));
 
+//MD ### .is_right(Either<a>)/p
+//MD Returns a boolean indicating if parameter is a Right./p
+const is_right = compose(equals("Right"))(prop("type_name"));
+
+//MD ### .create(left_value)(right_value)/p
+//MD If left is a bottom value, returns `right(right_value)`. Otherwise returns
+//MD `left(left_value`./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create(7)("right");/p
+//MD {type_name: "Left", value: 7}/p
+//MD ```/p
 // a -> b -> Either<a b>
 const create = function (left_value) {
     return function (right_value) {
@@ -72,12 +105,13 @@ const create = function (left_value) {
     };
 };
 
-const is_right = compose(equals("Right"))(prop("type_name"));
-const is_left = compose(equals("Left"))(prop("type_name"));
 
+//MD ### .equals(Either<a>)(Either<b>)/p
+//MD This method is only available if the type is instantiated with Setoid type
+//MD modules for both left and right./p
 // Setoid :: (T -> T) -> a -> a -> boolean
-const adt_equals = function (T_fst) {
-    return function (T_snd) {
+const adt_equals = function (T_left) {
+    return function (T_right) {
         return function (x) {
             return function (y) {
 
@@ -87,8 +121,8 @@ const adt_equals = function (T_fst) {
 
                 const useT = (
                     is_right(x)
-                    ? T_snd
-                    : T_fst
+                    ? T_right
+                    : T_left
                 );
 
                 return useT.equals(extract(y))(extract(x));
@@ -97,10 +131,13 @@ const adt_equals = function (T_fst) {
     };
 };
 
+//MD ### .lte(Either<a>)(Either<b>)/p
+//MD This method is only available if the type is instantiated with Ord type
+//MD modules for both left and right. Evaluates if `b` is less than or equal to
+//MD `a`./p
 // Ord :: ((T) -> (T)) -> a -> a -> Boolean
-// Reads lte y is x?
-const lte = function (T_fst) {
-    return function (T_snd) {
+const lte = function (T_left) {
+    return function (T_right) {
         return function (y) {
             return function (x) {
 
@@ -110,8 +147,8 @@ const lte = function (T_fst) {
 
                 const useT = (
                     is_right(x)
-                    ? T_snd
-                    : T_fst
+                    ? T_right
+                    : T_left
                 );
 
                 return useT.lte(extract(y))(extract(x));
@@ -120,6 +157,43 @@ const lte = function (T_fst) {
     };
 };
 
+//MD ### .concat(Either<a>)(Either<b>)/p
+//MD This method is only available if the type is instantiated with Semigroup
+//MD type modules for both left and right. If both parameters are the same, `b`
+//MD is concatted to `a`. If parameters are not the same Either type, the Right
+//MD is returned unchanged./p
+// Semigroup :: (T -> T) -> a -> a -> a
+const concat = function (T_left) {
+    return function (T_right) {
+        return function (x) {
+            return function (y) {
+
+// If a mix of right & left, return the right
+                if (x.type_name !== y.type_name) {
+                    return (
+                        is_right(x)
+                        ? x
+                        : y
+                    );
+                }
+
+// If two Rights, concat them
+                if (is_right(x)) {
+                    return right(on(T_right.concat)(extract)(x)(y));
+                }
+
+// Concat two Lefts
+                return left(on(T_left.concat)(extract)(x)(y));
+            };
+        };
+    };
+};
+
+// Monoid can't pass tests with a Left
+
+//MD ### .map(f)(Either<a>)/p
+//MD This method is right-biased - the function `f` is only applied to Right
+//MD values. Left values are returned unchanged./p
 // Functor :: (a -> b) -> F<a> -> F<b>
 const map = function (f) {
     return functional_if(
@@ -135,6 +209,8 @@ const map = function (f) {
     );
 };
 
+//MD ### .alt(Either<a>)(Either<b>)/p
+//MD Returns first value if it is Right, otherwise second value./p
 // Alt :: <a> -> <a> -> <a>
 const alt = function (x) {
     return function (y) {
@@ -146,6 +222,15 @@ const alt = function (x) {
     };
 };
 
+//MD ### .ap(Either<f>)(Either<a>)/p
+//MD If both parameters are Right, apply the function from the first to the
+//MD value from the second. If the first parameter is a Left, return it. If only
+//MD the second parameter is a Left, return it./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.ap(type_module.right(add(7)))(type_module.right(13));/p
+//MD {type_name: "Right", value: 20}/p
+//MD ```/p
 // Apply :: F<(a -> b)> -> F<a> -> F<b>
 const ap = function (ff) {
     return (
@@ -161,6 +246,8 @@ const ap = function (ff) {
                 right
             )
         )(
+
+// Return second parameter unchanged if is a Left
             identity
         )
 
@@ -169,9 +256,14 @@ const ap = function (ff) {
     );
 };
 
+//MD ### .of(x)/p
+//MD Synonymous with .right(), wraps parameter in a Right./p
 // Applicative :: a -> <a>
 const of = right;
 
+//MD ### .chain(f)(Either<a>)/p
+//MD If the Either is a Right, apply the function to it. Otherwise return the
+//MD Either unchanged./p
 // Chain :: (a -> <b>) -> <a> -> <b>
 const chain = function (f) {
     return functional_if(
@@ -183,6 +275,9 @@ const chain = function (f) {
     );
 };
 
+//MD ### .bimap(f)(g)(Either<a>)/p
+//MD If the Either is a Left, apply `f` to it. If it's a Right, apply `g` to
+//MD it./p
 // Bifunctor :: (a->b) -> (c->d) -> Either<a, c> -> Either<b, d>
 const bimap = function (f) {
     return function (g) {
@@ -204,6 +299,9 @@ const bimap = function (f) {
     };
 };
 
+//MD ### .extend(f)(Either<a>)/p
+//MD If the Either is a Right, apply the function to it and package the result
+//MD in a Right. Otherwise return the Either unchanged./p
 // Extend :: (Either <a b> -> c) -> Either <a b> -> Either <a c>
 const extend = function (f) {
     return functional_if(
@@ -215,6 +313,14 @@ const extend = function (f) {
     );
 };
 
+//MD ### .extract(Either<a>)/p
+//MD Extract the value from an Either./p
+// Comonad :: Either<a> -> a
+const extract = prop("value");
+
+//MD ### .reduce(f)(initial_value)(Either<a>)/p
+//MD If the Either is a Right, run the reduction function primed with
+//MD `initial_value`. Otherwise, return `initial_value`./p
 // Foldable :: ((b, a) -> b, b, <a>) -> b
 const reduce = function (f) {
     return function (initial) {
@@ -228,35 +334,9 @@ const reduce = function (f) {
     };
 };
 
-// Semigroup :: (T -> T) -> a -> a -> a
-const concat = function (T_fst) {
-    return function (T_snd) {
-        return function (x) {
-            return function (y) {
-
-// If a mix of right & left, right the right
-                if (x.type_name !== y.type_name) {
-                    return (
-                        is_right(x)
-                        ? x
-                        : y
-                    );
-                }
-
-// If two Rights, concat them
-                if (is_right(x)) {
-                    return right(T_snd.concat(extract(x))(extract(y)));
-                }
-
-// Concat two Lefts
-                return left(T_fst.concat(extract(x))(extract(y)));
-            };
-        };
-    };
-};
-
-// Monoid can't pass tests with a Left
-
+//MD ### .traverse(type_module)(f)(Either<a>)/p
+//MD If the Either is a Right, execute the traversal function. Otherwise, wrap
+//MD the value in type_module./p
 // Traversable :: Applicative<U> -> (a -> U<b>) -> T<a> -> U<T<b>>
 const traverse = function (to_T) {
     return function (f) {
@@ -274,16 +354,27 @@ const traverse = function (to_T) {
     };
 };
 
+//MD ### .validate(Either<a>)/p
+//MD Validate the Either structure. If type module has been instantiated with
+//MD Left and Right type modules, validate the contents./p
 // a -> boolean
-const validate = function (type_fst) {
-    return function (type_snd) {
-        return functional_if(
-            is_right
-        )(
-            compose(type_snd.validate)(extract)
-        )(
-            compose(type_fst.validate)(extract)
-        );
+const validate = function (type_left) {
+    return function (type_right) {
+        return function (x) {
+            if (!is_object(x) || !object_has_property("value")(x)) {
+                return false;
+            }
+
+            if (is_left(x)) {
+                return type_left.validate(extract(x));
+            }
+
+            if (is_right(x)) {
+                return type_right.validate(extract(x));
+            }
+
+            return false;
+        };
     };
 };
 

@@ -1,6 +1,6 @@
 {
       "name": "@jlrwi/static-types-basic",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "description": "Basic curried-static-land Algebraic Data Types",
       "main": "index.js",
       "homepage": "https://github.com/jlrwi/static-types-basic",
@@ -19,7 +19,7 @@
             "pretest": "batch-process --pretest ./modules.json",
             "test": "node ./test/test_modules.js",
             "posttest": "type test.log",
-            "stage": "batch-process --min ./modules.json"
+            "stage": "batch-process --min ./modules.json & batch-process --doc ./modules.json"
       },
       "author": "Jonathan Reimer",
       "license": "ISC",

@@ -2,13 +2,15 @@
     fudge
 */
 
-/*
-This implementation of a linked list uses arrays. Link is in the form:
-    [value, next_link]
-The list is terminated by []
-Example:
-    ["linked", ["list",["example", []]]]
-*/
+//MD # linked_list_type/p
+//MD A simple linked list data type implemented using two-element arrays,
+//MD terminated by an empty array./p
+//MD Example:/p
+//MD ```/p
+//MD ["linked", ["list",["example", []]]]/p
+//MD ```/p
+
+//MD ## Module methods/p
 
 import {
 //test     apply_with,
@@ -67,6 +69,29 @@ const map_thru = function (tail_callback) {
     return mapper;
 };
 
+//MD ### .create(x)/p
+//MD Returns `x` as a single-item linked list./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create(7);/p
+//MD [7, []]/p
+//MD ```/p
+const create = function (x) {
+    return Object.freeze([x, []]);
+};
+
+//MD ### .append(list)(x)/p
+//MD Appends `x` to the front of `list`./p
+// [a] -> a -> [a]
+const append = function (list) {
+    return function (x) {
+        return [x, list];
+    };
+};
+
+//MD ### .equals(a)(b)/p
+//MD Type module must be instantiated with a Setoid for this method to be
+//MD available./p
 // Setoid :: a -> a -> boolean
 const adt_equals = function (content_type) {
     const is_equal = function (y_link) {
@@ -89,6 +114,10 @@ const adt_equals = function (content_type) {
     return is_equal;
 };
 
+//MD ### .lte(a)(b)/p
+//MD Type module must be instantiated with an Ord for this method to be
+//MD available. Evaluates link-by-link, checking if `b` is less than or equal
+//MD to `a`./p
 // Ord :: a -> a -> Boolean
 // true at first index where x[n] < y[n]
 // or identical up to identical list lengths
@@ -121,6 +150,8 @@ const lte = function (content_type) {
     return is_lte;
 };
 
+//MD ### .concat(a)(b)/p
+//MD This method copies `a` and attaches `b` onto the end./p
 // Semigroup :: [a] -> [a] -> [a]
 const concat = function (ys) {
     return function (xs) {
@@ -146,12 +177,27 @@ const concat = function (ys) {
     };
 };
 
+//MD ### .empty()/p
+//MD Returns an empty array (the list terminator)./p
 // Monoid :: () -> []
 const empty = constant(Object.freeze([]));
 
+//MD ### .map(f)(list)/p
 // Functor :: (a -> b) -> [a] -> [b]
 const map = map_thru(constant([]));
 
+//MD ### .alt(a)(b)/p
+//MD Identical to `.concat()`./p
+// Alt :: [a] -> [a] -> [a]
+const alt = concat;
+
+//MD ### .zero()/p
+//MD Identical to `.empty()`./p
+// Plus :: () -> []
+const zero = empty;
+
+//MD ### .ap(list<f>)(list<x>)/p
+//MD Apply each `f` to each `x`./p
 // Apply :: [(a -> b)] -> [a] -> [b]
 const ap = function (f_link) {
     return function (x_link) {
@@ -179,11 +225,13 @@ const ap = function (f_link) {
     };
 };
 
+//MD ### .of(x)/p
+//MD Identical to `.create()`./p
 // Applicative :: x -> [x]
-const of = function (x) {
-    return Object.freeze([x, []]);
-};
+const of = create;
 
+//MD ### .chain(f)(a)/p
+//MD The function `f` takes contents of `a` and returns a list./p
 // Chain :: (a -> [b]) -> [a] -> [b]
 const chain = function (f) {
     const reducer = function (acc) {
@@ -193,6 +241,8 @@ const chain = function (f) {
     return reduce(reducer)([]);
 };
 
+//MD ### .extend(f)(a)/p
+//MD The function `f` takes a list and returns a value./p
 // Extend :: ([a] -> b) -> [a] -> [b]
 const extend = function (f) {
     const each = function (link) {
@@ -220,36 +270,7 @@ const extract = function (x_link) {
     return x_link[0];
 }; */
 
-// Filterable :: (a -> Boolean) -> [a] -> [a]
-const filter = function (f) {
-    const each = function (x_link) {
-        if (last_link(x_link)) {
-            return x_link;
-        }
-
-        if (f(x_link[0]) === true) {
-            return [
-                x_link[0],
-                each(x_link[1])
-            ];
-        }
-
-        return each(x_link[1]);
-    };
-
-    return each;
-};
-
-// Alt :: [a] -> [a] -> [a]
-const alt = concat;
-
-// [a] -> a -> [a]
-const append = function (list) {
-    return function (x) {
-        return [x, list];
-    };
-};
-
+//MD ### .reduce(f)(initial_value)(a)/p
 // Foldable :: ((b, a) -> b) -> (_->b) -> [a] -> b
 const reduce = function (f) {
     const each = function (acc) {
@@ -268,6 +289,7 @@ const reduce = function (f) {
     return each;
 };
 
+//MD ### .traverse(type_module)(f)(a)/p
 // Traversable :: Applicative<U> -> (a -> U<b>) -> List<a> -> U<List<b>>
 // Concat for this type is expensive because the result list has to be rebuilt
 // at each concat. This traverse works impurely under the hood to mutate the
@@ -339,12 +361,32 @@ const traverse = function (of_T) {
     };
 };
 
-// Plus :: () -> []
-const zero = empty;
+//MD ### .filter(f)(a)/p
+//MD Filter a list using functon `f` on each element./p
+// Filterable :: (a -> Boolean) -> [a] -> [a]
+const filter = function (f) {
+    const each = function (x_link) {
+        if (last_link(x_link)) {
+            return x_link;
+        }
+
+        if (f(x_link[0]) === true) {
+            return [
+                x_link[0],
+                each(x_link[1])
+            ];
+        }
+
+        return each(x_link[1]);
+    };
+
+    return each;
+};
 
 // Sanctuary has chainRec
 
-
+//MD ### .get(index)(list)/p
+//MD The the value at `index`./p
 const get = function (idx) {
     const stepper = function (position) {
         return function (link) {
@@ -366,7 +408,8 @@ const get = function (idx) {
     return stepper(0);
 };
 
-
+//MD ### .set(index)(value)(list)/p
+//MD Set the `value` at `index`./p
 const set = function (idx) {
     return function (val) {
         const stepper = function (position) {
@@ -403,6 +446,8 @@ const is_array_of_two = andf(
     Array.isArray
 );
 
+//MD ### .validate(list)/p
+//MD If type is instantiated with a contents type, contents will be validated./p
 const validate = function (predicate) {
 
     const check_link = function (position) {
@@ -431,9 +476,6 @@ const validate = function (predicate) {
     return check_link(0);
 };
 
-// Takes an array and returns a frozen copy
-// Needs self-reference to get name and validate()
-const create = of;
 
 // Have to pass a sl type module to get Setoid
 const type_factory = function (type_of) {

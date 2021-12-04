@@ -2,9 +2,16 @@
     fudge
 */
 
+//MD # identity_type/p
+//MD The most basic type container. Gains Monoid and Ord if instantiated with a
+//MD compliant type module./p
+
+//MD ## Module methods/p
+
 import {
     constant,
     compose,
+    converge,
     flip,
     on,
     pipe,
@@ -16,6 +23,7 @@ import {
 //test     equals,
 //test     add,
     is_object,
+    andf,
     functional_if,
     prop,
     object_has_property,
@@ -30,11 +38,18 @@ import {
 //test import pair_type from "../src/Pair_Type.js";
 //test let jsc = jsCheck();
 
+// Comonad :: <a> -> a
 const type_name = "Identity";
 
 const extract = prop("value");
 
-const of = function (x) {
+//MD ### .create(x)/p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create(7);/p
+//MD {type_name: "Identity", value: 7}/p
+//MD ```/p
+const create = function (x) {
     return minimal_object({
         type_name,
         toJSON: constant("Identity (" + JSON.stringify(x) + ")"),
@@ -42,6 +57,10 @@ const of = function (x) {
     });
 };
 
+//MD ### .concat(a)(b)/p
+//MD Only available if type module is instantiated with a Semigroup. Value `b`
+//MD is concatted onto `a`./p
+// Semigroup :: <a> -> <a> -> <a>
 const concat = function (T) {
     return function (y) {
         return function (x) {
@@ -50,18 +69,30 @@ const concat = function (T) {
     };
 };
 
+//MD ### .empty()/p
+//MD Only available if type module is instantiated with a Monoid./p
+// Monoid :: () -> <a>
 const empty = function (spec) {
     return compose(of)(spec.empty);
 };
 
+//MD ### .equals(a)(b)/p
+//MD Only available if type module is instantiated with a Setoid./p
+// Setoid :: <a> -> <a> -> boolean
 const adt_equals = function (T) {
     return on(T.equals)(extract);
 };
 
+//MD ### .lte(a)(b)/p
+//MD Only available if type module is instantiated with an Ord. Determintes if
+//MD `b` is less than or equal to `a`./p
+// Ord :: <a> -> <a> -> boolean
 const lte = function (T) {
     return on(T.lte)(extract);
 };
 
+//MD ### .map(f)(a)/p
+// Functor :: (a -> b) -> <a> -> <b>
 const map = function (f) {
     return pipeN(
         extract,
@@ -70,8 +101,21 @@ const map = function (f) {
     );
 };
 
+//MD ### .ap(Identity<a -> b>)(Identity<a>)/p
+// Apply :: <a -> b> -> <a> -> <b>
 const ap = compose(map)(extract);
 
+//MD ### .of(x)/p
+// Applicative :: a -> <a>
+const of = create;
+
+//MD ### .extend(f)(a)/p
+// Extend :: (<a> -> b) -> <a> -> <b>
+const extend = compose(of);
+
+//MD ### .extract(a)/p
+
+//MD ### .reduce(f)(initial_value)(a)/p
 // Foldable :: ((b, a) -> b) -> b -> C a -> b
 const reduce = function (f) {
     return function (initial_value) {
@@ -79,6 +123,7 @@ const reduce = function (f) {
     };
 };
 
+//MD ### .traverse(type_module)(f)(a)/p
 // Traversable :: Applicative<U> -> (a -> U<b>) -> C a -> U<C b>
 const traverse = function (U) {
     return function (f) {
@@ -90,9 +135,11 @@ const traverse = function (U) {
     };
 };
 
+//MD ### .validate(a)/p
+//MD Checks contents when instantiated with a type_module./p
 const validate = function (T) {
     return functional_if(
-        is_object
+        andf(object_has_property("value"))(is_object)
     )(
         compose(T.validate)(extract)
     )(
@@ -100,7 +147,6 @@ const validate = function (T) {
     );
 };
 
-const create = of;
 
 const type_factory = function (type_of) {
     const base_type = {
@@ -108,12 +154,13 @@ const type_factory = function (type_of) {
         version: 1,
         type_name,
         ap,
+        extend,
         map,
         of,
         reduce,
         traverse,
         create,
-        validate: is_object,
+        validate: andf(object_has_property("value"))(is_object),
         extract
     };
 
@@ -186,6 +233,33 @@ const type_factory = function (type_of) {
 //test             f: jsc.wun_of(test_fxs),
 //test             u: invoke_of(jsc.wun_of(test_fxs)),
 //test             x: jsc.string()
+//test         }
+//test     },
+//test     extend: {
+//test         T: testT,
+//test         signature: {
+//test             f: converge(compose)(
+//test                 jsc.wun_of(test_fxs)
+//test             )(
+//test                 constant(prop("value"))
+//test             ),
+//test             g: converge(compose)(
+//test                 jsc.wun_of(test_fxs)
+//test             )(
+//test                 constant(prop("value"))
+//test             ),
+//test             w: invoke_of(jsc.string())
+//test         }
+//test     },
+//test     comonad: {
+//test         T: testT,
+//test         signature: {
+//test             f: converge(compose)(
+//test                 jsc.wun_of(test_fxs)
+//test             )(
+//test                 constant(prop("value"))
+//test             ),
+//test             w: invoke_of(jsc.string())
 //test         }
 //test     },
 //test     foldable: {

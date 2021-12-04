@@ -2,6 +2,11 @@
     fudge
 */
 
+//MD # vector_type/p
+//MD A type of pair storing angle in radians and a positive magnitude./p
+
+//MD ## Module methods/p
+
 import {
     compose,
     constant,
@@ -50,8 +55,14 @@ const angle_constrain = function (min, max) {
 
 const constrain_pi = angle_constrain(negate(Math.PI), Math.PI);
 
+//MD ### .create(magnitude)(angle)/p
+//MD Returns a vector object./p
+//MD Example:/p
+//MD ```/p
+//MD type_module.create(7)(Math.PI);/p
+//MD {type_name: "Vector", angle: 3.1415, magnitude: 7}/p
+//MD ```/p
 // a -> b -> Pair<a, b>
-// Morphism between functors Function and Pair
 const create = function (magnitude) {
     return function (angle) {
         return minimal_object({
@@ -64,6 +75,8 @@ const create = function (magnitude) {
     };
 };
 
+//MD ### .equals(a)(b)/p
+//MD Attempts to reduce angles for accurate comparison./p
 // Setoid :: T -> a -> a -> boolean
 const equals = function (y) {
     return function (x) {
@@ -77,6 +90,9 @@ const equals = function (y) {
     };
 };
 
+//MD ### .concat(a)(b)/p
+//MD Concatenation is graphical - `x` is tacked onto the "end" of `y` and the
+//MD result is a vector to the resulting position./p
 // Semigroup :: T -> a -> a -> a
 // x is added onto y
 const concat = function (y) {
@@ -105,11 +121,16 @@ const concat = function (y) {
     };
 };
 
+//MD ### .empty()/p
+//MD Returns a zero vector./p
 // Monoid :: T -> _ -> a
 const empty = function () {
     return create(0)(0);
 };
 
+//MD ### .invert(a)/p
+//MD Inverts the angle to point in the opposite direction.
+//MD Magnitude is unchanged./p
 // Group :: a -> a
 const invert = function ({magnitude, angle}) {
     return create(
@@ -121,8 +142,8 @@ const invert = function ({magnitude, angle}) {
     );
 };
 
-// Map, ap, reduce, and of are magnitude-biased
-
+//MD ### .map(f)(a)/p
+//MD Applies `f` to the magnitude of the vector./p
 // Functor :: (a -> b) -> a -> b
 const map = function (f) {
     return converge(
@@ -134,6 +155,8 @@ const map = function (f) {
     );
 };
 
+//MD ### .bimap(f)(g)(a)/p
+//MD Applies `f` to the magnitude, and `g` to the angle./p
 // Bifunctor :: (a->b) -> (c->d) -> Pair<a, c> -> Pair<b, d>
 const bimap = function (f) {
     return function (g) {
@@ -147,8 +170,8 @@ const bimap = function (f) {
     };
 };
 
-//const extract = snd;
-
+//MD ### .validate(a)/p
+//MD Validate value structure and positive magnitude./p
 const validate = functional_if(
     is_object
 )(
