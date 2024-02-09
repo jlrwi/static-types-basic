@@ -1,5 +1,5 @@
 /*jslint
-    fudge
+    unordered
 */
 
 //MD # constant_type/p

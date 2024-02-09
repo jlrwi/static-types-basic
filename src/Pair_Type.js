@@ -1,5 +1,5 @@
 /*jslint
-    fudge
+    unordered
 */
 
 //MD # pair_type/p

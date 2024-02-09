@@ -1,5 +1,5 @@
 /*jslint
-    fudge
+    unordered
 */
 
 //MD # vector_type/p

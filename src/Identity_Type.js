@@ -1,5 +1,5 @@
 /*jslint
-    fudge
+    unordered
 */
 
 //MD # identity_type/p
@@ -11,7 +11,7 @@
 import {
     constant,
     compose,
-    converge,
+//test     converge,
     flip,
     on,
     pipe,

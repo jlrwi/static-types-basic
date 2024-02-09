@@ -1,5 +1,5 @@
 /*jslint
-    fudge
+    unordered
 */
 
 //MD # linked_list_type/p

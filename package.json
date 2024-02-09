@@ -1,10 +1,13 @@
 {
       "name": "@jlrwi/static-types-basic",
-      "version": "1.4.1",
+      "version": "1.5.0",
       "description": "Basic curried-static-land Algebraic Data Types",
       "main": "index.js",
       "homepage": "https://github.com/jlrwi/static-types-basic",
       "repository": "github:jlrwi/static-types-basic",
+      "files": [
+            "*.min.js"
+      ],
       "devDependencies": {
             "@jlrwi/adt-tests": "github:jlrwi/adt-tests",
             "@jlrwi/es-static-types": "github:jlrwi/es-static-types",
