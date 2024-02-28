@@ -12,6 +12,7 @@ import {
     compose,
     constant,
     converge,
+    converge2,
     flip
 } from "@jlrwi/combinators";
 import {
@@ -23,6 +24,7 @@ import {
 //test     max,
     and,
     andf,
+    or,
     functional_if,
     prop,
     is_object,
@@ -87,6 +89,25 @@ const equals = function (spec_fst) {
                     spec_snd.equals(snd(xs))(snd(ys))
                 );
             };
+        };
+    };
+};
+
+
+//MD ### .includes(x)(a)/p
+//MD Only available when type is instantiated with a pair of Ords.
+//MD Returns true if either element of pair equals 'x'./p
+// T -> T -> x -> a -> boolean
+const includes = function (spec_fst) {
+    return function (spec_snd) {
+        return function (x) {
+            return converge2(
+                or
+            )(
+                compose(spec_fst.equals(x))(fst)
+            )(
+                compose(spec_snd.equals(x))(snd)
+            );
         };
     };
 };
@@ -274,6 +295,13 @@ const adt_compose = function (pairA) {
     };
 };
 
+// New fx - keep it?
+//MD ### .toArray(a)/p
+//MD Returns the pair as a two-element array./p
+const toArray = function (pair) {
+    return [fst(pair), snd(pair)];
+};
+
 //MD ### .validate(a)/p
 //MD Validates internal structure of pair. If instantiated with types, elements
 //MD will also be validated./p
@@ -312,7 +340,8 @@ const type_factory = function (spec_fst) {
             traverse,
             extend,
             extract,
-            compose: adt_compose
+            compose: adt_compose,
+            toArray
         };
 
         if (is_object(spec_fst) && is_object(spec_snd)) {
@@ -325,6 +354,7 @@ const type_factory = function (spec_fst) {
 
             if (check_for_prop("equals")) {
                 base_type.equals = equals(spec_fst)(spec_snd);
+                base_type.includes = includes(spec_fst)(spec_snd);
             }
 
             if (check_for_prop("lte")) {

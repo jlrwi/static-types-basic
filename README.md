@@ -40,4 +40,5 @@ const type_module = factory(content_type_module);
 - [maybe_type](doc/Maybe_Type.MD)
 - [nil_type](doc/Nil_Type.MD)
 - [pair_type](doc/Pair_Type.MD)
+- [pair_type_custom](doc/Pair_Type_Custom.MD)
 - [vector_type](doc/Vector_Type.MD)

@@ -14,6 +14,8 @@ Retrieve the first value of a pair.
 Retrieve the second value of a pair.   
 ### .equals(a)(b)   
 Only available when type is instantiated with a pair of Setoids.   
+### .includes(x)(a)   
+Only available when type is instantiated with a pair of Ords. Returns true if either element of pair equals 'x'.   
 ### .lte(a)(b)   
 Only available when type is instantiated with a pair of Ords. Measures if `b` is less than or equal to `a`.   
 ### .concat(a)(b)   
@@ -40,5 +42,7 @@ Returns the result of applying `f` to `initial_value` and the second element of 
 Returns pair of first element and function result wrapped in `type_module`.   
 ### .compose(a)(b)   
 Returns pair of first element of `a` and second element of `b`.   
+### .toArray(a)   
+Returns the pair as a two-element array.   
 ### .validate(a)   
 Validates internal structure of pair. If instantiated with types, elements will also be validated.   

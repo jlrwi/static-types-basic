@@ -5,6 +5,7 @@
 //MD # pair_type_custom/p
 //MD Pair data type permitting custom names for elements. Additiona algebras
 //MD become available if instantiated with types for both elements./p
+//MD Calling the type factory requires {type, name} for each.
 
 //MD ## Module methods/p
 
