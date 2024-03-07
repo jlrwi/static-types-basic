@@ -16,7 +16,13 @@ import {
     empty_object,
     object_concat
 } from "@jlrwi/esfunctions";
+//stage import pair_type from "./Pair_Type.min.js";
+
+// This import for dev only
+//stage /*
 import pair_type from "../Pair_Type.min.js";
+//stage */
+
 //test import jsCheck from "@jlrwi/jscheck";
 //test let jsc = jsCheck();
 
